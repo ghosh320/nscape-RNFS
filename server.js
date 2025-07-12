@@ -22,6 +22,8 @@ app.use(morgan("dev"));
 //ROUTES
 app.use("/api/v1/auth", require("./routes/userRoutes"));
 app.use("/api/v1/post", require("./routes/postRoutes"));
+//app.use("/api/v1/hotel", require("./routes/hotelRoutes"));
+app.use("/api/v1/booking", require("./routes/bookingRoutes"));
 
 //home
 app.get("/", (req,res)=>{

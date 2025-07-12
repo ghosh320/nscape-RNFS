@@ -1,8 +1,8 @@
 const express = require("express");
-const { requireSingIn } = require("../controllers/userController");
+const { requireSignIn } = require("../controllers/userController");
 const {
   createPostController,
-  getAllPostsContoller,
+  getAllPostsController,
   getUserPostsController,
   deletePostController,
   updatePostController,
@@ -12,19 +12,19 @@ const {
 const router = express.Router();
 
 // CREATE POST || POST
-router.post("/create-post", requireSingIn, createPostController);
+router.post("/create-post", requireSignIn, createPostController);
 
 //GET ALL POSTs
-router.get("/get-all-post", getAllPostsContoller);
+router.get("/get-all-post", getAllPostsController);
 
 //GET USER POSTs
-router.get("/get-user-post", requireSingIn, getUserPostsController);
+router.get("/get-user-post", requireSignIn, getUserPostsController);
 
 //DELEET POST
-router.delete("/delete-post/:id", requireSingIn, deletePostController);
+router.delete("/delete-post/:id", requireSignIn, deletePostController);
 
 //UPDATE POST
-router.put("/update-post/:id", requireSingIn, updatePostController);
+router.put("/update-post/:id", requireSignIn, updatePostController);
 
 //export
 module.exports = router;

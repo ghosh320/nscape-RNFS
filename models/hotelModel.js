@@ -1,16 +1,7 @@
 const mongoose = require("mongoose");
 
-// schema
-const postSchema = new mongoose.Schema(
+const hotelSchema = new mongoose.Schema(
   {
-    category: {
-      type: String,
-      required: [true, "Please add category"],
-    },
-    description: {
-      type: String,
-      required: [true, "Please add post description"],
-    },
     name: {
       type: String,
       required: [true, "Please add hotel name"],
@@ -25,17 +16,23 @@ const postSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Please add price per night"],
     },
+    description: {
+      type: String,
+      required: [true, "Please add description"],
+      trim: true,
+    },
     image: {
       type: String,
       required: [true, "Please add an image URL"],
     },
     postedBy: {
-      type: mongoose.Schema.ObjectId,
-      ref: "User",
-      required: true,
-    },
-  },
+          type: mongoose.Schema.ObjectId,
+          ref: "User",
+          required: true,
+        },
+     },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Post", postSchema);
+module.exports = mongoose.model("Hotel", hotelSchema);
+

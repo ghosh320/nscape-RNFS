@@ -3,48 +3,36 @@ const { hashPassword, comparePassword } = require("../helpers/authHelper");
 const userModel = require("../models/userModel");
 var { expressjwt: jwt } = require("express-jwt");
 
-//middleware
-const requireSingIn = jwt({
+// ✅ Middleware to protect routes and decode user token
+const requireSignIn = jwt({
   secret: process.env.JWT_SECRET,
   algorithms: ["HS256"],
+  requestProperty: "auth", // ⬅ attaches decoded token to req.auth
 });
 
-//register
+// ✅ Register Controller
 const registerController = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    //validation
-    if (!name) {
+
+    if (!name || !email || !password || password.length < 6) {
       return res.status(400).send({
         success: false,
-        message: "name is required",
+        message: "All fields are required and password must be at least 6 characters",
       });
     }
-    if (!email) {
+
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
       return res.status(400).send({
         success: false,
-        message: "email is required",
+        message: "User already registered with this email",
       });
     }
-    if (!password || password.length < 6) {
-      return res.status(400).send({
-        success: false,
-        message: "password is required and 6 character long",
-      });
-    }
-    //exisiting user
-    const exisitingUser = await userModel.findOne({ email });
-    if (exisitingUser) {
-      return res.status(500).send({
-        success: false,
-        message: "User Already Register With This EMail",
-      });
-    }
-    //hashed pasword
+
     const hashedPassword = await hashPassword(password);
 
-    //save user
-    const user = await userModel({
+    const user = await new userModel({
       name,
       email,
       password: hashedPassword,
@@ -52,55 +40,54 @@ const registerController = async (req, res) => {
 
     return res.status(201).send({
       success: true,
-      message: "Registeration Successfull please login",
+      message: "Registration successful. Please login.",
     });
   } catch (error) {
     console.log(error);
     return res.status(500).send({
       success: false,
-      message: "Error in Register API",
+      message: "Error in registration API",
       error,
     });
   }
 };
 
-//login
+// ✅ Login Controller
 const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    //validation
+
     if (!email || !password) {
-      return res.status(500).send({
+      return res.status(400).send({
         success: false,
-        message: "Please Provide Email Or Password",
+        message: "Email and password are required",
       });
     }
-    // find user
+
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.status(500).send({
+      return res.status(401).send({
         success: false,
-        message: "User Not Found",
+        message: "User not found",
       });
     }
-    //match password
+
     const match = await comparePassword(password, user.password);
     if (!match) {
-      return res.status(500).send({
+      return res.status(401).send({
         success: false,
-        message: "Invalid usrname or password",
+        message: "Invalid email or password",
       });
     }
-    //TOKEN JWT
-    const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
+
+    const token = JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    // undeinfed password
-    user.password = undefined;
+    user.password = undefined; // Hide password
     res.status(200).send({
       success: true,
-      message: "login successfully",
+      message: "Login successful",
       token,
       user,
     });
@@ -108,27 +95,35 @@ const loginController = async (req, res) => {
     console.log(error);
     return res.status(500).send({
       success: false,
-      message: "error in login api",
+      message: "Error in login API",
       error,
     });
   }
 };
 
-//update user
+// ✅ Update User Controller
 const updateUserController = async (req, res) => {
   try {
-    const { name, password, email } = req.body;
-    //user find
+    const { name, password } = req.body;
+    const email = req.auth.email; // ⬅ Or use req.auth._id if that's how you sign the token
+
     const user = await userModel.findOne({ email });
-    //password validate
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     if (password && password.length < 6) {
       return res.status(400).send({
         success: false,
-        message: "Password is required and should be 6 character long",
+        message: "Password must be at least 6 characters",
       });
     }
+
     const hashedPassword = password ? await hashPassword(password) : undefined;
-    //updated useer
+
     const updatedUser = await userModel.findOneAndUpdate(
       { email },
       {
@@ -137,24 +132,26 @@ const updateUserController = async (req, res) => {
       },
       { new: true }
     );
+
     updatedUser.password = undefined;
+
     res.status(200).send({
       success: true,
-      message: "Profile Updated Please Login",
+      message: "Profile updated successfully",
       updatedUser,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error In User Update Api",
+      message: "Error in user update API",
       error,
     });
   }
 };
 
 module.exports = {
-  requireSingIn,
+  requireSignIn,
   registerController,
   loginController,
   updateUserController,
